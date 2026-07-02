@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>STDFParser4Net</AssemblyName>
+    <RootNamespace>STDFParser4Net</RootNamespace>
+    <PackageId>STDFParser4Net</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>STDFParser4Net Contributors</Authors>
+    <Description>A pure, streaming STDF V4 binary parser for .NET (netstandard2.1). No business logic, no unit conversion, no hardcoded encoding.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/STDFParser4Net/STDFParser4Net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/STDFParser4Net/STDFParser4Net</RepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>
