@@ -43,3 +43,7 @@ coverage*.info
 *~
 .DS_Store
 Thumbs.db
+/.claude
+/.codegraph
+/.trellis
+/AGENTS.md
