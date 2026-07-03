@@ -4,6 +4,8 @@
 
 一个纯净、流式的 **STDF V4** 二进制解析器，面向 .NET。
 
+[![NuGet](https://img.shields.io/nuget/v/STDFParser4Net.svg)](https://www.nuget.org/packages/STDFParser4Net/)
+
 - 目标框架：**.NET Standard 2.1**（可被 .NET Core 3.0+ / .NET 5+ / .NET 6/7/8 消费）。
 - **流式**：`IEnumerable<StdfRecord>` 拉模型 —— 内存占用与文件大小无关。
 - **纯净**：不含单位换算、不含硬编码文本编码、不含 DataTable/良率/Cpk/数据库逻辑。字段值按文件原始存储原样返回。
@@ -12,6 +14,14 @@
 - **无损字符串**：`Cn`/`C1` 字段同时保留原始字节与解码文本。
 
 > 本库只做解析，不写 STDF 文件，不做任何业务层转换。
+
+## 安装
+
+包已发布到 [NuGet](https://www.nuget.org/packages/STDFParser4Net/)：
+
+```bash
+dotnet add package STDFParser4Net
+```
 
 ## 快速开始
 
@@ -105,33 +115,33 @@ var opts = new StdfParserOptions().WithRecLenMode(RecLenMode.BodyPlusTypSub);
 
 ## 记录覆盖范围（STDF V4）
 
-| 类型 | (TYP,SUB) | 记录 |
-|------|-----------|------|
-| FAR | (0,10)  | 文件属性 |
-| ATR | (0,20)  | 审计追踪 |
-| MIR | (1,10)  | 主信息 |
-| MRR | (1,20)  | 主结果 |
-| PCR | (1,30)  | 部件计数 |
-| HBR | (1,40)  | 硬件 Bin |
-| SBR | (1,50)  | 软件 Bin |
-| PMR | (1,60)  | 引脚映射 |
-| PGR | (1,62)  | 引脚组 |
-| PLR | (1,63)  | 引脚列表 |
-| RDR | (1,70)  | 复测数据 |
-| SDR | (1,80)  | 站点描述 |
-| WIR | (2,10)  | 晶圆信息 |
-| WRR | (2,20)  | 晶圆结果 |
-| WCR | (2,30)  | 晶圆配置 |
-| PIR | (5,10)  | 部件信息 |
-| PRR | (5,20)  | 部件结果 |
-| BPS | (20,10) | 程序段开始 |
-| EPS | (20,20) | 程序段结束 |
-| GDR | (50,10) | 通用数据 |
-| DTR | (30,10) | 数据日志文本 |
-| TSR | (10,30) | 测试概要 |
-| PTR | (15,10) | 参数测试 |
-| MPR | (15,15) | 多结果参数测试 |
-| FTR | (15,30) | 功能测试 |
+| 类型  | (TYP,SUB) | 记录      |
+| --- | --------- | ------- |
+| FAR | (0,10)    | 文件属性    |
+| ATR | (0,20)    | 审计追踪    |
+| MIR | (1,10)    | 主信息     |
+| MRR | (1,20)    | 主结果     |
+| PCR | (1,30)    | 部件计数    |
+| HBR | (1,40)    | 硬件 Bin  |
+| SBR | (1,50)    | 软件 Bin  |
+| PMR | (1,60)    | 引脚映射    |
+| PGR | (1,62)    | 引脚组     |
+| PLR | (1,63)    | 引脚列表    |
+| RDR | (1,70)    | 复测数据    |
+| SDR | (1,80)    | 站点描述    |
+| WIR | (2,10)    | 晶圆信息    |
+| WRR | (2,20)    | 晶圆结果    |
+| WCR | (2,30)    | 晶圆配置    |
+| PIR | (5,10)    | 部件信息    |
+| PRR | (5,20)    | 部件结果    |
+| BPS | (20,10)   | 程序段开始   |
+| EPS | (20,20)   | 程序段结束   |
+| GDR | (50,10)   | 通用数据    |
+| DTR | (30,10)   | 数据日志文本  |
+| TSR | (10,30)   | 测试概要    |
+| PTR | (15,10)   | 参数测试    |
+| MPR | (15,15)   | 多结果参数测试 |
+| FTR | (15,30)   | 功能测试    |
 
 未识别的 (TYP,SUB) 对会以 `UnknownRecord` 返回，保留原始体字节；迭代不会被中断。
 
@@ -154,14 +164,6 @@ var opts = new StdfParserOptions().WithRecLenMode(RecLenMode.BodyPlusTypSub);
 - 只解析，不提供写入器。
 - `REC_LEN` 模式不自动探测；默认为仅计记录体。非标文件请显式设置。
 - 可选/条件字段（如 TSR/PTR/MPR 中由 `OPT_FLAG` 控制的字段）在存在时按标志位读取；缺失时为 `null`。
-
-## 构建与测试
-
-```bat
-cd D:\WorkSpace\Code\Other\STDFParser4Net
-dotnet build STDFParser4Net.sln
-dotnet test STDFParser4Net.sln
-```
 
 ## 许可
 

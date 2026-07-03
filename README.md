@@ -4,6 +4,8 @@ English | [简体中文](README.zh-CN.md)
 
 A pure, streaming **STDF V4** binary parser for .NET.
 
+[![NuGet](https://img.shields.io/nuget/v/STDFParser4Net.svg)](https://www.nuget.org/packages/STDFParser4Net/)
+
 - Target framework: **.NET Standard 2.1** (consumable by .NET Core 3.0+ / .NET 5+ / .NET 6/7/8).
 - **Streaming**: `IEnumerable<StdfRecord>` pull model — memory independent of file size.
 - **Pure**: no unit conversion, no hardcoded text encoding, no DataTable/yield/Cpk/database logic. Original field values are returned as stored.
@@ -12,6 +14,14 @@ A pure, streaming **STDF V4** binary parser for .NET.
 - **Lossless strings**: `Cn`/`C1` fields keep both raw bytes and decoded text.
 
 > This library parses only. It does not write STDF files and does not perform any business-level transformation.
+
+## Installation
+
+Available on [NuGet](https://www.nuget.org/packages/STDFParser4Net/):
+
+```bash
+dotnet add package STDFParser4Net
+```
 
 ## Quick start
 
@@ -110,33 +120,33 @@ var opts = new StdfParserOptions().WithRecLenMode(RecLenMode.BodyPlusTypSub);
 
 ## Record coverage (STDF V4)
 
-| Type | (TYP,SUB) | Record |
-|------|-----------|--------|
-| FAR | (0,10)  | File Attributes |
-| ATR | (0,20)  | Audit Trail |
-| MIR | (1,10)  | Master Information |
-| MRR | (1,20)  | Master Results |
-| PCR | (1,30)  | Part Count |
-| HBR | (1,40)  | Hardware Bin |
-| SBR | (1,50)  | Software Bin |
-| PMR | (1,60)  | Pin Map |
-| PGR | (1,62)  | Pin Group |
-| PLR | (1,63)  | Pin List |
-| RDR | (1,70)  | Retest Data |
-| SDR | (1,80)  | Site Description |
-| WIR | (2,10)  | Wafer Information |
-| WRR | (2,20)  | Wafer Results |
-| WCR | (2,30)  | Wafer Configuration |
-| PIR | (5,10)  | Part Information |
-| PRR | (5,20)  | Part Results |
-| BPS | (20,10) | Begin Program Section |
-| EPS | (20,20) | End Program Section |
-| GDR | (50,10) | Generic Data |
-| DTR | (30,10) | Datalog Text |
-| TSR | (10,30) | Test Synopsis |
-| PTR | (15,10) | Parametric Test |
-| MPR | (15,15) | Multiple Result Parametric |
-| FTR | (15,30) | Functional Test |
+| Type | (TYP,SUB) | Record                     |
+| ---- | --------- | -------------------------- |
+| FAR  | (0,10)    | File Attributes            |
+| ATR  | (0,20)    | Audit Trail                |
+| MIR  | (1,10)    | Master Information         |
+| MRR  | (1,20)    | Master Results             |
+| PCR  | (1,30)    | Part Count                 |
+| HBR  | (1,40)    | Hardware Bin               |
+| SBR  | (1,50)    | Software Bin               |
+| PMR  | (1,60)    | Pin Map                    |
+| PGR  | (1,62)    | Pin Group                  |
+| PLR  | (1,63)    | Pin List                   |
+| RDR  | (1,70)    | Retest Data                |
+| SDR  | (1,80)    | Site Description           |
+| WIR  | (2,10)    | Wafer Information          |
+| WRR  | (2,20)    | Wafer Results              |
+| WCR  | (2,30)    | Wafer Configuration        |
+| PIR  | (5,10)    | Part Information           |
+| PRR  | (5,20)    | Part Results               |
+| BPS  | (20,10)   | Begin Program Section      |
+| EPS  | (20,20)   | End Program Section        |
+| GDR  | (50,10)   | Generic Data               |
+| DTR  | (30,10)   | Datalog Text               |
+| TSR  | (10,30)   | Test Synopsis              |
+| PTR  | (15,10)   | Parametric Test            |
+| MPR  | (15,15)   | Multiple Result Parametric |
+| FTR  | (15,30)   | Functional Test            |
 
 Unrecognized (TYP,SUB) pairs are returned as `UnknownRecord` with the raw body bytes preserved;
 iteration is not interrupted.
@@ -161,14 +171,6 @@ and as `[Flags]` enums in the `STDFParser4Net.Enums` namespace.
 - `REC_LEN` mode is not auto-detected; default is body-only. Set it explicitly for non-standard files.
 - Optional/conditional fields (e.g. `OPT_FLAG`-gated fields in TSR/PTR/MPR) are read when present
   according to the flag bits; missing fields are `null`.
-
-## Building & testing
-
-```bat
-cd D:\WorkSpace\Code\Other\STDFParser4Net
-dotnet build STDFParser4Net.sln
-dotnet test STDFParser4Net.sln
-```
 
 ## License
 
