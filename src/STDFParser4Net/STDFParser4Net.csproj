@@ -8,15 +8,22 @@
     <RootNamespace>STDFParser4Net</RootNamespace>
     <PackageId>STDFParser4Net</PackageId>
     <Version>0.1.0</Version>
-    <Authors>STDFParser4Net Contributors</Authors>
+    <Authors>EzioJin</Authors>
     <Description>A pure, streaming STDF V4 binary parser for .NET (netstandard2.1). No business logic, no unit conversion, no hardcoded encoding.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/STDFParser4Net/STDFParser4Net</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/STDFParser4Net/STDFParser4Net</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/jzh19930420/STDFParser4Net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jzh19930420/STDFParser4Net.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>
