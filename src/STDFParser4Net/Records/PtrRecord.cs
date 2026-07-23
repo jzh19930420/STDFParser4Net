@@ -8,9 +8,11 @@ namespace STDFParser4Net.Records
     /// returned raw — no scale adjustment, no unit conversion.
     /// <para>
     /// TEST_TXT and ALARM_ID are optional Cn fields that precede OPT_FLAG.
-    /// OPT_FLAG (B1) is optional; when present, bits 0-7 control the presence of
-    /// RES_SCAL through C_LLMFMT (bit=0 present, bit=1 absent). C_HLMFMT, LO_SPEC
-    /// and HI_SPEC are trailing optionals guarded by remaining body bytes.
+    /// When OPT_FLAG is present, optional numeric/format fields are read in fixed
+    /// order (RES_SCAL … HI_SPEC) using remaining body bytes. OPT_FLAG bits are
+    /// exposed for callers but are not used to skip fields when reading — many
+    /// production files write all scales/limits regardless of the flag bits.
+    /// Format fields (C_RESFMT, C_LLMFMT, C_HLMFMT) are Cn per STDF V4.
     /// </para>
     /// </summary>
     public sealed class PtrRecord : StdfRecord
@@ -42,37 +44,37 @@ namespace STDFParser4Net.Records
         /// <summary>B1: Optional flag. Null when absent. See <see cref="OptFlag"/>.</summary>
         public byte? OPT_FLAG { get; }
 
-        /// <summary>I1 (OPT_FLAG bit0): result scale exponent. Null when omitted.</summary>
+        /// <summary>I1: result scale exponent. Null when omitted from the body.</summary>
         public sbyte? RES_SCAL { get; }
 
-        /// <summary>I1 (OPT_FLAG bit1): low-limit scale exponent. Null when omitted.</summary>
+        /// <summary>I1: low-limit scale exponent. Null when omitted from the body.</summary>
         public sbyte? LLM_SCAL { get; }
 
-        /// <summary>I1 (OPT_FLAG bit2): high-limit scale exponent. Null when omitted.</summary>
+        /// <summary>I1: high-limit scale exponent. Null when omitted from the body.</summary>
         public sbyte? HLM_SCAL { get; }
 
-        /// <summary>R4 (OPT_FLAG bit3): low limit (raw). Null when omitted.</summary>
+        /// <summary>R4: low limit (raw). Null when omitted from the body.</summary>
         public float? LO_LIMIT { get; }
 
-        /// <summary>R4 (OPT_FLAG bit4): high limit (raw). Null when omitted.</summary>
+        /// <summary>R4: high limit (raw). Null when omitted from the body.</summary>
         public float? HI_LIMIT { get; }
 
-        /// <summary>Cn (OPT_FLAG bit5): units string. Null when omitted.</summary>
+        /// <summary>Cn: units string. Null when omitted from the body.</summary>
         public StdfString? UNITS { get; }
 
-        /// <summary>C1 (OPT_FLAG bit6): result format. Null when omitted.</summary>
-        public char? C_RESFMT { get; }
+        /// <summary>Cn: result format string (e.g. "%5.3f"). Null when omitted.</summary>
+        public StdfString? C_RESFMT { get; }
 
-        /// <summary>C1 (OPT_FLAG bit7): low-limit format. Null when omitted.</summary>
-        public char? C_LLMFMT { get; }
+        /// <summary>Cn: low-limit format string. Null when omitted.</summary>
+        public StdfString? C_LLMFMT { get; }
 
-        /// <summary>C1 (trailing optional): high-limit format. Null when omitted.</summary>
-        public char? C_HLMFMT { get; }
+        /// <summary>Cn: high-limit format string. Null when omitted.</summary>
+        public StdfString? C_HLMFMT { get; }
 
-        /// <summary>R4 (trailing optional): low spec limit (raw). Null when omitted.</summary>
+        /// <summary>R4: low spec limit (raw). Null when omitted.</summary>
         public float? LO_SPEC { get; }
 
-        /// <summary>R4 (trailing optional): high spec limit (raw). Null when omitted.</summary>
+        /// <summary>R4: high spec limit (raw). Null when omitted.</summary>
         public float? HI_SPEC { get; }
 
         /// <summary>Typed view of <see cref="TEST_FLG"/>.</summary>
@@ -89,7 +91,7 @@ namespace STDFParser4Net.Records
             StdfString? testTxt, StdfString? alarmId, byte? optFlag,
             sbyte? resScal, sbyte? llmScal, sbyte? hlmScal,
             float? loLimit, float? hiLimit, StdfString? units,
-            char? cResfmt, char? cLlmfmt, char? cHlmfmt,
+            StdfString? cResfmt, StdfString? cLlmfmt, StdfString? cHlmfmt,
             float? loSpec, float? hiSpec)
             : base(RecordType.PTR, header)
         {

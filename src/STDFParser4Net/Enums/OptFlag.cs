@@ -3,17 +3,17 @@ using System;
 namespace STDFParser4Net.Enums
 {
     /// <summary>
-    /// OPT_FLAG (B1) — optional-data flag for PTR and MPR. A set bit means the
-    /// corresponding optional field is ABSENT from the record; a clear bit means
-    /// the field is present.
+    /// OPT_FLAG (B1) — optional-data flag for PTR and MPR as defined by STDF V4.
+    /// A set bit means the corresponding optional field is ABSENT according to the
+    /// specification; a clear bit means the field is present.
     /// <para>
-    /// OPT_FLAG is a single byte so only bits 0-7 can be explicitly set. The
-    /// trailing optional fields (C_HLMFMT, LO_SPEC, HI_SPEC) are not controlled
-    /// by OPT_FLAG bits in standard STDF V4; their presence is determined by
-    /// remaining body bytes.
+    /// <b>Parsing note:</b> this library stores the raw flag but does <b>not</b> use
+    /// the bits to skip fields when reading. Production equipment commonly writes
+    /// RES_SCAL…HI_LIMIT in fixed order regardless of OPT_FLAG. Field presence is
+    /// determined by remaining body bytes after OPT_FLAG.
     /// </para>
     /// <list type="bullet">
-    /// <item>bit 0 (0x01): RES_SCAL absent.</item>
+    /// <item>bit 0 (0x01): RES_SCAL absent (spec meaning).</item>
     /// <item>bit 1 (0x02): LLM_SCAL absent.</item>
     /// <item>bit 2 (0x04): HLM_SCAL absent.</item>
     /// <item>bit 3 (0x08): LO_LIMIT absent.</item>

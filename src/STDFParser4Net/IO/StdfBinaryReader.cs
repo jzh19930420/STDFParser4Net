@@ -23,6 +23,7 @@ namespace STDFParser4Net.IO
 
         private long _recordStart;
         private long _recordLen;
+        private bool _inRecord;
 
         public StdfBinaryReader(Stream stream, Endianness endianness, StdfStringEncoding encoding, RecLenMode recLenMode)
         {
@@ -32,6 +33,7 @@ namespace STDFParser4Net.IO
             _recLenMode = recLenMode;
             _recordStart = 0;
             _recordLen = 0;
+            _inRecord = false;
         }
 
         public long Position => _stream.Position;
@@ -42,32 +44,83 @@ namespace STDFParser4Net.IO
 
         public void SetEndianness(Endianness endianness) => _endianness = endianness;
 
-        /// <summary>Bytes remaining in the current record body.</summary>
-        public long RemainingInRecord => _recordStart + _recordLen - _stream.Position;
+        /// <summary>Bytes remaining in the current record body (0 when not inside a record).</summary>
+        public long RemainingInRecord
+        {
+            get
+            {
+                if (!_inRecord) return 0;
+                return _recordStart + _recordLen - _stream.Position;
+            }
+        }
 
         /// <summary>True if at least <paramref name="n"/> body bytes remain in the current record.</summary>
-        public bool HasRemaining(long n) => RemainingInRecord >= n;
+        public bool HasRemaining(long n) => _inRecord && RemainingInRecord >= n;
 
         /// <summary>Mark the start/length of a record body so boundary tracking works.</summary>
         public void BeginRecord(in StdfRecordHeader header)
         {
             _recordStart = header.BodyStart;
             _recordLen = header.BodyLength;
+            _inRecord = true;
         }
 
-        /// <summary>Advance past any unread body bytes of the current record.</summary>
+        /// <summary>
+        /// Advance to the end of the current record body. If the position overshot the
+        /// body (mis-parsed field), seek back to the body end when the stream is seekable
+        /// so the next header stays aligned.
+        /// </summary>
         public void SkipRestOfRecord()
         {
-            long rem = RemainingInRecord;
-            if (rem > 0 && _stream.CanSeek)
-                _stream.Seek(rem, SeekOrigin.Current);
-            else if (rem > 0)
-                ReadExact(new byte[rem], 0, (int)rem);
+            if (!_inRecord) return;
+
+            long bodyEnd = _recordStart + _recordLen;
+            long pos = _stream.Position;
+
+            if (pos < bodyEnd)
+            {
+                long rem = bodyEnd - pos;
+                if (_stream.CanSeek)
+                    _stream.Seek(rem, SeekOrigin.Current);
+                else
+                    Drain(rem);
+            }
+            else if (pos > bodyEnd && _stream.CanSeek)
+            {
+                _stream.Seek(bodyEnd, SeekOrigin.Begin);
+            }
+
+            _inRecord = false;
         }
 
         // ---- raw byte reading ----
 
-        private void ReadExact(byte[] buffer, int offset, int count)
+        private void EnsureRecordCapacity(int count)
+        {
+            if (!_inRecord || count <= 0) return;
+            long rem = RemainingInRecord;
+            if (count > rem)
+            {
+                throw new RecordBoundaryExceededException(
+                    $"Record body exhausted: need {count} byte(s), only {rem} remaining at position {Position} " +
+                    $"(bodyStart={_recordStart}, bodyLen={_recordLen}).");
+            }
+        }
+
+        private void Drain(long count)
+        {
+            // Used only by SkipRestOfRecord for non-seekable streams; already within body.
+            var buf = new byte[Math.Min(count, 4096)];
+            long left = count;
+            while (left > 0)
+            {
+                int n = (int)Math.Min(left, buf.Length);
+                ReadExactRaw(buf, 0, n);
+                left -= n;
+            }
+        }
+
+        private void ReadExactRaw(byte[] buffer, int offset, int count)
         {
             int total = 0;
             while (total < count)
@@ -80,8 +133,15 @@ namespace STDFParser4Net.IO
             }
         }
 
+        private void ReadExact(byte[] buffer, int offset, int count)
+        {
+            EnsureRecordCapacity(count);
+            ReadExactRaw(buffer, offset, count);
+        }
+
         public byte[] ReadBytes(int count)
         {
+            if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
             var data = new byte[count];
             if (count > 0) ReadExact(data, 0, count);
             return data;
@@ -91,6 +151,7 @@ namespace STDFParser4Net.IO
 
         public byte ReadU1()
         {
+            EnsureRecordCapacity(1);
             int b = _stream.ReadByte();
             if (b < 0) throw new UnexpectedEndOfStreamException("Unexpected end of stream reading U1.");
             return (byte)b;
@@ -157,6 +218,8 @@ namespace STDFParser4Net.IO
         public StdfString ReadCn()
         {
             int len = ReadU1();
+            // Payload must fit in the remainder of the current record body.
+            EnsureRecordCapacity(len);
             byte[] raw = len > 0 ? ReadBytes(len) : Array.Empty<byte>();
             return _encoding.Decode(raw);
         }
@@ -168,6 +231,7 @@ namespace STDFParser4Net.IO
         public StdfString ReadCnx()
         {
             int len = ReadU2();
+            EnsureRecordCapacity(len);
             byte[] raw = len > 0 ? ReadBytes(len) : Array.Empty<byte>();
             return _encoding.Decode(raw);
         }
@@ -178,6 +242,7 @@ namespace STDFParser4Net.IO
         public byte[] ReadBn()
         {
             int len = ReadU1();
+            EnsureRecordCapacity(len);
             return ReadBytes(len);
         }
 
@@ -191,6 +256,7 @@ namespace STDFParser4Net.IO
         {
             int numBits = ReadU2();
             int numBytes = (numBits + 7) / 8;
+            EnsureRecordCapacity(numBytes);
             byte[] data = numBytes > 0 ? ReadBytes(numBytes) : Array.Empty<byte>();
             return new BitString(numBits, data);
         }
@@ -240,13 +306,26 @@ namespace STDFParser4Net.IO
         /// <summary>
         /// Read the 4-byte record header (REC_LEN U2, REC_TYP U1, REC_SUB U1) and compute
         /// the body length according to <see cref="RecLenMode"/>.
+        /// Must be called outside of an active record body (after <see cref="SkipRestOfRecord"/>).
         /// </summary>
         public StdfRecordHeader ReadRecordHeader(RecLenMode mode)
         {
+            // Headers are not part of a record body; clear any stale in-record state
+            // and read the 4-byte header without body-boundary checks.
+            _inRecord = false;
+
             long headerStart = Position;
-            ushort recLen = ReadU2();
-            byte typ = ReadU1();
-            byte sub = ReadU1();
+            ReadExactRaw(_buf2, 0, 2);
+            ushort recLen = _endianness == Endianness.LittleEndian
+                ? BinaryPrimitives.ReadUInt16LittleEndian(_buf2)
+                : BinaryPrimitives.ReadUInt16BigEndian(_buf2);
+
+            int typB = _stream.ReadByte();
+            int subB = _stream.ReadByte();
+            if (typB < 0 || subB < 0)
+                throw new UnexpectedEndOfStreamException("Unexpected end of stream reading record header.");
+            byte typ = (byte)typB;
+            byte sub = (byte)subB;
             long bodyStart = Position;
 
             long bodyLen;

@@ -52,6 +52,16 @@ foreach (var record in parser.Parse(@"C:\data\lot123.std"))
 var all = parser.ParseAll(@"C:\data\lot123.std");
 ```
 
+## 示例
+
+可运行的控制台 demo 在 [`samples/STDFParserDemo`](samples/STDFParserDemo)：
+
+```bash
+dotnet run --project samples/STDFParserDemo
+# 或指定你自己的文件：
+dotnet run --project samples/STDFParserDemo -- path\to\lot123.std
+```
+
 ## 字节序
 
 STDF V4 文件的第一条记录必须是 `FAR`。解析器读取 `FAR.CPU_TYPE` 并据此设置整文件的字节序。

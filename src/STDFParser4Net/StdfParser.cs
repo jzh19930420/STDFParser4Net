@@ -78,6 +78,16 @@ namespace STDFParser4Net
                     yield break;
                 }
 
+                // Cap body length to remaining file bytes so Unknown reads never invent
+                // a huge length past EOF (corrupt REC_LEN near end of file).
+                long maxBody = Math.Max(0, reader.Length - header.BodyStart);
+                if (header.BodyLength > maxBody)
+                {
+                    header = new StdfRecordHeader(
+                        header.RecordLength, header.RecordType, header.RecordSub,
+                        header.HeaderStart, header.BodyStart, maxBody);
+                }
+
                 reader.BeginRecord(header);
 
                 StdfRecord? record = null;
@@ -95,10 +105,18 @@ namespace STDFParser4Net
                 }
                 else
                 {
-                    long bodyLen = Math.Max(0, header.BodyLength);
-                    int toRead = bodyLen <= int.MaxValue ? (int)bodyLen : int.MaxValue;
-                    byte[] raw = reader.ReadBytes(toRead);
-                    record = new UnknownRecord(header, raw);
+                    try
+                    {
+                        long bodyLen = Math.Max(0, header.BodyLength);
+                        int toRead = bodyLen <= int.MaxValue ? (int)bodyLen : int.MaxValue;
+                        byte[] raw = reader.ReadBytes(toRead);
+                        record = new UnknownRecord(header, raw);
+                    }
+                    catch (Exception) when (_options.ErrorMode == ErrorMode.SkipRecord)
+                    {
+                        reader.SkipRestOfRecord();
+                        continue;
+                    }
                 }
 
                 reader.SkipRestOfRecord();

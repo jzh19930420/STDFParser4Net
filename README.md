@@ -52,6 +52,16 @@ foreach (var record in parser.Parse(@"C:\data\lot123.std"))
 var all = parser.ParseAll(@"C:\data\lot123.std");
 ```
 
+## Sample
+
+A runnable console demo lives under [`samples/STDFParserDemo`](samples/STDFParserDemo):
+
+```bash
+dotnet run --project samples/STDFParserDemo
+# or with your own file:
+dotnet run --project samples/STDFParserDemo -- path\to\lot123.std
+```
+
 ## Endianness
 
 The first record of an STDF V4 file must be `FAR`. The parser reads `FAR.CPU_TYPE` and sets

@@ -9,7 +9,7 @@ namespace STDFParser4Net.Records.Readers
         {
             reader.BeginRecord(header);
 
-            // Fixed fields (10 bytes): TEST_NUM, HEAD_NUM, SITE_NUM, TEST_FLG, PARM_FLG, RESULT
+            // Fixed fields (12 bytes): TEST_NUM, HEAD_NUM, SITE_NUM, TEST_FLG, PARM_FLG, RESULT
             uint testNum = reader.ReadU4();
             byte headNum = reader.ReadU1();
             byte siteNum = reader.ReadU1();
@@ -26,60 +26,39 @@ namespace STDFParser4Net.Records.Readers
             if (reader.HasRemaining(1))
                 alarmId = reader.ReadCn();
 
-            // Optional OPT_FLAG (B1)
+            // Optional OPT_FLAG (B1). When present, the following fields are read in fixed
+            // order using remaining body bytes — OPT bits are stored but not used to skip
+            // fields (production equipment commonly writes all scales/limits regardless of bits).
             byte? optFlag = null;
             if (reader.HasRemaining(1))
                 optFlag = reader.ReadU1();
 
-            // Conditional fields: present when OPT_FLAG exists AND the corresponding bit is 0.
-            // Per STDF V4: bit=0 -> field present, bit=1 -> field omitted.
-            // OPT_FLAG is B1 (1 byte), so only bits 0-7 can be explicitly set. Bits 8-10
-            // always test as 0 (present); HasRemaining guards against truncated records.
-
             sbyte? resScal = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 0)) == 0 && reader.HasRemaining(1))
-                resScal = reader.ReadI1();
-
             sbyte? llmScal = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 1)) == 0 && reader.HasRemaining(1))
-                llmScal = reader.ReadI1();
-
             sbyte? hlmScal = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 2)) == 0 && reader.HasRemaining(1))
-                hlmScal = reader.ReadI1();
-
             float? loLimit = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 3)) == 0 && reader.HasRemaining(4))
-                loLimit = reader.ReadR4();
-
             float? hiLimit = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 4)) == 0 && reader.HasRemaining(4))
-                hiLimit = reader.ReadR4();
-
             StdfString? units = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 5)) == 0 && reader.HasRemaining(1))
-                units = reader.ReadCn();
-
-            char? cResfmt = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 6)) == 0 && reader.HasRemaining(1))
-                cResfmt = reader.ReadC1();
-
-            char? cLlmfmt = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 7)) == 0 && reader.HasRemaining(1))
-                cLlmfmt = reader.ReadC1();
-
-            // Trailing optionals (bits 8-10 cannot be set in B1; guarded by HasRemaining)
-            char? cHlmfmt = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 8)) == 0 && reader.HasRemaining(1))
-                cHlmfmt = reader.ReadC1();
-
+            StdfString? cResfmt = null;
+            StdfString? cLlmfmt = null;
+            StdfString? cHlmfmt = null;
             float? loSpec = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 9)) == 0 && reader.HasRemaining(4))
-                loSpec = reader.ReadR4();
-
             float? hiSpec = null;
-            if (optFlag.HasValue && (optFlag.Value & (1 << 10)) == 0 && reader.HasRemaining(4))
-                hiSpec = reader.ReadR4();
+
+            if (optFlag.HasValue)
+            {
+                if (reader.HasRemaining(1)) resScal = reader.ReadI1();
+                if (reader.HasRemaining(1)) llmScal = reader.ReadI1();
+                if (reader.HasRemaining(1)) hlmScal = reader.ReadI1();
+                if (reader.HasRemaining(4)) loLimit = reader.ReadR4();
+                if (reader.HasRemaining(4)) hiLimit = reader.ReadR4();
+                if (reader.HasRemaining(1)) units = reader.ReadCn();
+                if (reader.HasRemaining(1)) cResfmt = reader.ReadCn();
+                if (reader.HasRemaining(1)) cLlmfmt = reader.ReadCn();
+                if (reader.HasRemaining(1)) cHlmfmt = reader.ReadCn();
+                if (reader.HasRemaining(4)) loSpec = reader.ReadR4();
+                if (reader.HasRemaining(4)) hiSpec = reader.ReadR4();
+            }
 
             return new PtrRecord(header, testNum, headNum, siteNum, testFlg, parmFlg, result,
                 testTxt, alarmId, optFlag,
